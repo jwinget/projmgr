@@ -19,6 +19,7 @@ Depends:
     R (>= 3.1.2)
 Imports:
     gh,
+    gitlabr,
     magrittr
 Suggests:
     clipr,
