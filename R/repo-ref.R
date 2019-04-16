@@ -1,8 +1,8 @@
-#' Create reference to a GitHub repository
+#' Create reference to a GitHub or GitLab repository
 #'
 #' This function constructs a list of needed information to send API calls to a specific
-#' GitHub repository. Specifically, it stores information on the repository's name and
-#' owner, the type (whether or not Enterprise GitHub), and potentially credentials to authenticate.
+#' repository. Specifically, it stores information on the repository's name and
+#' owner, the type (whether or not Enterprise), and potentially credentials to authenticate.
 #'
 #' Note that this package can be used for GET requests on public repositories without any authentication
 #' (resulting in a lower rate limit.) To do this, simply pass any string into \code{identifier} that is not
@@ -10,13 +10,13 @@
 #'
 #' @param repo_owner Repository owner's username or GitHub Organization name
 #' @param repo_name Repository name
-#' @param is_enterprise Boolean denoting whether or not working with Enterprise GitHub.Defaults to \code{FALSE}
-#' @param hostname Host URL stub for Enterprise repositories (e.g. "mycorp.github.com")
-#' @param identifier Ideally should be left blank and defaults to using \code{GITHUB_PAT} or \code{GITHUB_ENT_PAT}
-#'     environment variables as Personal Access Tokens. If \code{identifier} has a value and \code{password} does not,
+#' @param is_enterprise Boolean denoting whether or not working with Enterprise repositories. Defaults to \code{FALSE}
+#' @param hostname Host URL stub for GitLab and/or Enterprise repositories (e.g. "mycorp.github.com")
+#' @param identifier Ideally should be left blank and defaults to using \code{GITHUB_PAT}, \code{GITHUB_ENT_PAT} or
+#'     \code{GITLAB_PAT} environment variables as Personal Access Tokens. If \code{identifier} has a value and \code{password} does not,
 #'     this is assumed to be an alternative name of the environment variable to use for your Personal Access Token. If
 #'     \code{password} is also provided, this is interpreted as a username.
-#' @param password GitHub password. Ideally should be left blank and then defaults to empty string which works in conjunction with personal access tokens. Required if supplying username.
+#' @param password GitHub/GitLab password. Ideally should be left blank and then defaults to empty string which works in conjunction with personal access tokens. Required if supplying username.
 #'
 #' @return List of repository reference information and credentials
 #' @export
@@ -42,7 +42,7 @@ create_repo_ref <-
       message(paste("Requests will authenticate with", identifier))
     }
     else if(identifier != "" & password != ""){
-
+      if(!grepl("gitlab", hostname)){
       # save credentials to local environment
       id_sys_var <- paste0("GITHUB_USER_", repo_name)
       pw_sys_var <- paste0("GITHUB_USER_", repo_name)
@@ -53,6 +53,15 @@ create_repo_ref <-
         paste0("Requests will authenticate with supplied username and password.",
                "Please see vignette on Personal Access Tokens for improved security.")
       )
+      }
+      else {
+        message("Personal Access Tokens are required for GitLab. Please see the vignette.")
+      }
+    }
+    else if(grepl("gitlab", hostname) & Sys.getenv("GITLAB_PAT") != ""){
+      id_sys_var <- "GITLAB_PAT"
+      pw_sys_var <- ""
+      message("Requests will authenticate with GITLAB_PAT")
     }
     else if(!is_enterprise & Sys.getenv("GITHUB_PAT") != ""){
       id_sys_var <- "GITHUB_PAT"
@@ -74,8 +83,11 @@ create_repo_ref <-
 
     # assign base url ----
 
-    if(!is_enterprise){
+    if(!is_enterprise & !grepl("gitlab", hostname)){
       base_url <- "https://api.github.com/"
+    }
+    else if(grepl("gitlab", hostname)) {
+      base_url <- paste0("https://",hostname,"/api/v4/")
     }
     else if(is_enterprise & length(hostname)>0){
       base_url <- paste0("https://",hostname,"/api/v3/")
