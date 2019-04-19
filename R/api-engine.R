@@ -10,16 +10,28 @@
 #' @return Content of GET request as list
 
 get_engine <- function(api_endpoint, ref, limit = Inf, ...){
-
-  res <-
-  gh::gh(
-    endpoint = paste0(ref$base_url, ref$repo_path, api_endpoint),
-    ...,
-    .token = Sys.getenv(ref$id),
-    .method = "GET",
-    .send_headers = c("User-Agent" = "https://github.com/emilyriederer/projmgr"),
-    .limit = limit
-  )
+  if(!grepl('gitlab', ref$base_url)) {
+  # Use GitHub API
+    res <-
+    gh::gh(
+      endpoint = paste0(ref$base_url, ref$repo_path, api_endpoint),
+      ...,
+      .token = Sys.getenv(ref$id),
+      .method = "GET",
+      .send_headers = c("User-Agent" = "https://github.com/emilyriederer/projmgr"),
+      .limit = limit
+    )
+  }
+  else {
+    # Use GitLab API
+    res <-
+    gitlabr::gitlab(
+      req = paste(ref$repo_path, api_endpoint, sep = "/"),
+      api_root = ref$base_url,
+      private_token = Sys.getenv(ref$id),
+      ...
+    )
+  }
 
   # handle special case when single item returned ----
   if( !is.null( names(res) ) ){ res <- list(res) }

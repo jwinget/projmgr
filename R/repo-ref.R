@@ -87,7 +87,7 @@ create_repo_ref <-
       base_url <- "https://api.github.com/"
     }
     else if(grepl("gitlab", hostname)) {
-      base_url <- paste0("https://",hostname,"/api/v4/")
+      base_url <- paste0("https://",hostname,"/api/v4/projects/")
     }
     else if(is_enterprise & length(hostname)>0){
       base_url <- paste0("https://",hostname,"/api/v3/")
@@ -108,7 +108,12 @@ create_repo_ref <-
       id = id_sys_var,
       pw = pw_sys_var,
       base_url = base_url,
-      repo_path = paste("repos", repo_owner, repo_name, sep = "/")
+      repo_path = if(!grepl("gitlab", base_url)){
+        paste("repos", repo_owner, repo_name, sep = "/")
+      }
+      else {
+        paste0(repo_owner, "%2F", repo_name)
+      }
     )
 
     # add repo-ref class ----
