@@ -50,15 +50,27 @@ get_engine <- function(api_endpoint, ref, limit = Inf, ...){
 #' @return Content of POST request as list
 
 post_engine <- function(api_endpoint, ref, ...){
-
-  gh::gh(
-    endpoint = paste0(ref$base_url, ref$repo_path, api_endpoint),
-    ...,
-    .token = Sys.getenv(ref$id),
-    .method = "POST",
-    .limit = Inf,
-    .send_headers = c("User-Agent" = "https://github.com/emilyriederer/projmgr")
-  )
+  if(!grepl('gitlab', ref$base_url)) {
+    # Use GitHub API
+    gh::gh(
+      endpoint = paste0(ref$base_url, ref$repo_path, api_endpoint),
+      ...,
+      .token = Sys.getenv(ref$id),
+      .method = "POST",
+      .limit = Inf,
+      .send_headers = c("User-Agent" = "https://github.com/emilyriederer/projmgr")
+    )
+  }
+  else {
+    # Use GitLab API
+    gitlabr::gitlab(
+      req = paste(ref$repo_path, api_endpoint, sep = "/"),
+      api_root = ref$base_url,
+      verb = 'POST',
+      private_token = Sys.getenv(ref$id),
+      ...
+    )
+  }
 
 }
 
@@ -72,16 +84,27 @@ post_engine <- function(api_endpoint, ref, ...){
 #' @return Content of PATCH request as list
 
 patch_engine <- function(api_endpoint, ref, ...){
-
-  gh::gh(
-    endpoint = paste0(ref$base_url, ref$repo_path, api_endpoint),
-    ...,
-    .token = Sys.getenv(ref$id),
-    .method = "PATCH",
-    .limit = Inf,
-    .send_headers = c("User-Agent" = "https://github.com/emilyriederer/projmgr")
-  )
-
+  if(!grepl('gitlab', ref$base_url)) {
+    # Use GitHub API
+    gh::gh(
+      endpoint = paste0(ref$base_url, ref$repo_path, api_endpoint),
+      ...,
+      .token = Sys.getenv(ref$id),
+      .method = "PATCH",
+      .limit = Inf,
+      .send_headers = c("User-Agent" = "https://github.com/emilyriederer/projmgr")
+    )
+  }
+  else {
+    # Use GitLab API
+    gitlabr::gitlab(
+      req = paste(ref$repo_path, api_endpoint, sep = "/"),
+      api_root = ref$base_url,
+      verb = 'PATCH',
+      private_token = Sys.getenv(ref$id),
+      ...
+    )
+  }
 }
 
 # internal functions focused on cleaning inputs to reduce common api errors
