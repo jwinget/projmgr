@@ -44,22 +44,23 @@ check_rate_limit <- function(ref){
 #' }
 
 check_credentials <- function(ref){
-
   # get information of authenticating user
   auth_ref <- ref
   auth_ref[['repo_path']] <- ''
-  auth_req <- get_engine("user", auth_ref)
 
+  if (!grepl("gitlab", ref$base_url)){
+  auth_req <- get_engine("user", auth_ref)
   # get information on repo collaborators
   perm_req <- try(get_engine("/collaborators", ref), silent = TRUE)
+
   if("try-error" %in% class(perm_req)){
-  perm_req <- list(admin = FALSE, push = FALSE, pull = FALSE)
+    perm_req <- list(admin = FALSE, push = FALSE, pull = FALSE)
   }
   else{
-  login_match <- vapply(perm_req,
-                        FUN = function(x) x[["login"]] == auth_req[[1]]$login,
-                        FUN.VALUE = logical(1))
-  perm_req <- perm_req[[which(login_match)]]$permissions
+    login_match <- vapply(perm_req,
+                          FUN = function(x) x[["login"]] == auth_req[[1]]$login,
+                          FUN.VALUE = logical(1))
+    perm_req <- perm_req[[which(login_match)]]$permissions
   }
 
   cat("-- With provided credentials -- \n",
@@ -70,7 +71,24 @@ check_credentials <- function(ref){
       "+ Push: ", perm_req$push, "\n",
       "+ Pull: ", perm_req$pull, "\n",
       sep = '')
-
+  } else {
+    # Check using GitLab Access Level
+    # Use httr to get the authenticated user because it's outside the projects scope
+    user <- httr::content(httr::GET(paste0(gl_ref$base_url,
+                                           "user?private_token=",
+                                           Sys.getenv(gl_ref$id))),
+                          as="parsed")$username
+    perms <- get_engine("members", ref)[[1]]
+    perms_lvl <- 0
+    perms_lvl <- perms[perms$username == user,]$access_level
+    value <- c(0, 10, 20, 30, 40, 50)
+    level <- c("No", "Guest", "Reporter", "Developer", "Maintainer", "Owner")
+    pl <- as.data.frame(cbind(value, level), stringsAsFactors = FALSE)
+    cat("-- With provided credentials -- \n",
+        "+ Login: ", perms[perms$username == user,]$username, "\n",
+        "-- In the ", ref$repo_name, " repo -- \n",
+        pl[pl$value == perms_lvl,]$level, "access")
+  }
 }
 
 

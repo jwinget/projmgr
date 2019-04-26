@@ -87,7 +87,7 @@ create_repo_ref <-
       base_url <- "https://api.github.com/"
     }
     else if(grepl("gitlab", hostname)) {
-      base_url <- paste0("https://",hostname,"/api/v4/projects/")
+      base_url <- paste0("https://",hostname,"/api/v4/")
     }
     else if(is_enterprise & length(hostname)>0){
       base_url <- paste0("https://",hostname,"/api/v3/")
@@ -112,7 +112,7 @@ create_repo_ref <-
         paste("repos", repo_owner, repo_name, sep = "/")
       }
       else {
-        paste0(repo_owner, "%2F", repo_name)
+        paste0("projects/", repo_owner, "%2F", repo_name)
       }
     )
 
