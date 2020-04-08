@@ -74,9 +74,9 @@ check_credentials <- function(ref){
   } else {
     # Check using GitLab Access Level
     # Use httr to get the authenticated user because it's outside the projects scope
-    user <- httr::content(httr::GET(paste0(gl_ref$base_url,
+    user <- httr::content(httr::GET(paste0(ref$base_url,
                                            "user?private_token=",
-                                           Sys.getenv(gl_ref$id))),
+                                           Sys.getenv(ref$id))),
                           as="parsed")$username
     perms <- get_engine("members", ref)[[1]]
     perms_lvl <- 0
